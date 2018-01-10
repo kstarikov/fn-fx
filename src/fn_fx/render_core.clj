@@ -220,11 +220,20 @@
                                               (.getParameters ctor)))]
         (.newInstance ctor arr)))))
 
+(defn capitalize [s]
+  (if (> (count s) 0)
+    (str (Character/toUpperCase (.charAt s 0))
+         (subs s 1))
+    s))
+
+(defn gen-prop-name [func prop]
+  (str "set" (func (str/replace (name prop) "?" ""))))
 
 (defn get-setter [^Class klass prop]
-  (let [prop-name      (str "set" (util/kabob->class (str/replace (name prop) "?" "")))
+  (let [prop-name (gen-prop-name util/kabob->class prop)
+		alt-prop-name (gen-prop-name capitalize prop)
         ^Method method (->> (.getMethods klass)
-                            (filter #(= prop-name (.getName ^Method %)))
+                            (filter #(contains? (set [prop-name alt-prop-name]) (.getName ^Method %)))
                             (filter #(= 1 (count (.getParameters ^Method %))))
                             first)
         _              (assert method (str "No property " prop " on type " klass))
